@@ -358,8 +358,9 @@ def global_search():
         pass
     
     try:
-        project_query = f"SELECT * FROM projects WHERE name LIKE '%{query}%' OR description LIKE '%{query}%'"
-        project_result = db.session.execute(text(project_query))
+        # Use parameterized query to prevent SQL injection
+        project_query = text("SELECT * FROM projects WHERE name LIKE :search_pattern OR description LIKE :search_pattern")
+        project_result = db.session.execute(project_query, {"search_pattern": f"%{query}%"})
         results['projects'] = [dict(row) for row in project_result]
     except:
         pass
