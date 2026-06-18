@@ -216,13 +216,19 @@ def get_tasks_api():
     assigned_to = request.args.get('assigned_to')
     
     if search:
-        query = "SELECT * FROM tasks WHERE title LIKE '%{}%' OR description LIKE '%{}%'".format(search, search)
+        # Use parameterized queries to prevent SQL injection
+        query = "SELECT * FROM tasks WHERE title LIKE :search_pattern OR description LIKE :search_pattern"
+        params = {'search_pattern': f'%{search}%'}
+
         if project_id:
-            query += f" AND project_id = {project_id}"
+            query += " AND project_id = :project_id"
+            params['project_id'] = project_id
         if assigned_to:
-            query += f" AND assigned_to = {assigned_to}"
-        result = db.session.execute(text(query))
-        tasks = [dict(row) for row in result]
+            query += " AND assigned_to = :assigned_to"
+            params['assigned_to'] = assigned_to
+
+        result = db.session.execute(text(query), params)
+        tasks = [dict(row._mapping) for row in result]
     else:
         query = Task.query
         if project_id:
